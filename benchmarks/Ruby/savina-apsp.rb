@@ -97,7 +97,8 @@ class SavinaApsp < Benchmark
     NUM_BLOCKS_IN_SINGLE_DIM.times { |i|
       NUM_BLOCKS_IN_SINGLE_DIM.times { |j|
         current = blockActors[i][j]
-        neighbors = (blockActors.map { |row| row[j] } + blockActors[i]) - [current]
+        neighbors = (blockActors.map { |row| row[j] } + blockActors[i])
+        neighbors.delete current
         current.send! NeighborMessage.new(neighbors.freeze)
       }
     }
