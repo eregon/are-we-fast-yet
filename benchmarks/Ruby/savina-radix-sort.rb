@@ -8,7 +8,7 @@
 # Savina Radix Sort
 
 #ARGS = [100_000, 256, 74755] # 10 actors
-ARGS = [100_000, 64, 74755] # 8 actors
+ARGS = [100_000, 64, 74755] # 8 actors (1 + 6 + 1)
 #ARGS = [200_000, 16, 74755] # 6 actors
 
 require_relative 'savina-common'
