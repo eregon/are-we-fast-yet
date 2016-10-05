@@ -7,10 +7,11 @@
 
 # Savina Trapezoidal Approximation
 
+actors = Integer(ENV["ACTORS"] || 4)
 #ARGS = [10_000_000, 100, 1.0, 5.0]
 #ARGS = [10_000_000, 4, 1.0, 5.0] # Good, around 1s/iteration
 #ARGS = [1_000_000, 4, 1.0, 5.0]
-ARGS = [2_000_000, 4, 1.0, 5.0]
+ARGS = [2_000_000, actors, 1.0, 5.0]
 
 require_relative 'savina-common'
 
