@@ -36,18 +36,26 @@ class SavinaTrapezoidal < Benchmark
   end
 
   def self.verify(result)
+    eps = 1e-15
     expected = if N == 10_000_000 and W == 4
       0.27108075195294984
     elsif N == 2_000_000 and W == 4
       0.271080751950028
+    elsif N == 2_000_000 and W == 2
+      0.2710807519500298
+    elsif N == 2_000_000 and W == 1
+      0.2710807519500336
     elsif N == 1_000_000 and W == 4
       0.27108075194089204
     elsif N == 100_000 and W == 2
       0.27108664843106395
+    else
+      eps = 1e-5
+      0.271080751950029
     end
 
     diff = (result - expected).abs
-    success = diff < 1e-15
+    success = diff < eps
 
     raise "Wrong result: #{result} VS #{expected} (#{diff})" unless success
     true
