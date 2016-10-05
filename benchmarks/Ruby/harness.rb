@@ -41,12 +41,12 @@ class Run
   attr_accessor :num_iterations
   attr_accessor :inner_iterations
 
-  def initialize(name)
+  def initialize(name, num_iterations, inner_iterations)
     @name             = name
     @benchmark_suite  = load_benchmark_suite(name)
     @total            = 0
-    @num_iterations   = 1
-    @inner_iterations = 1
+    @num_iterations   = num_iterations
+    @inner_iterations = inner_iterations
   end
 
   def load_benchmark_suite(benchmark_name)
@@ -100,13 +100,17 @@ class Run
 end
 
 def process_arguments(args)
-  run = Run.new(args[0])
-
-  if args.size > 1
-    run.num_iterations = Integer(args[1])
-    run.inner_iterations = Integer(args[2]) if args.size > 2
+  name = args.shift
+  num_iterations = 1
+  inner_iterations = 1
+  unless args.empty?
+    num_iterations = Integer(args.shift)
   end
-  run
+  unless args.empty?
+    inner_iterations = Integer(args.shift)
+  end
+
+  Run.new(name, num_iterations, inner_iterations)
 end
 
 def print_usage
