@@ -47,7 +47,7 @@ module ApspUtils
       if j == i
         0
       else
-        random.nextInt(MAX_EDGE_WEIGHT)
+        random.next_int(MAX_EDGE_WEIGHT)
       end
     }
   end

@@ -76,7 +76,7 @@ class MyRandom
     @seed = ((@seed * 1309) + 13849) & 65535
   end
 
-  def nextInt bound
+  def next_int bound
     # fair enough for low values of bound
     self.next % bound
   end
