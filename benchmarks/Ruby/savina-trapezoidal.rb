@@ -84,10 +84,10 @@ class MasterActor < Actor
         :exit
       end
     when WorkMessage
-      workerRange = (message.r - message.l) / NUM_WORKERS
+      worker_range = (message.r - message.l) / NUM_WORKERS
       @workers.each_with_index { |worker,i|
-        wl = (workerRange * i) + message.l
-        wr = wl + workerRange
+        wl = (worker_range * i) + message.l
+        wr = wl + worker_range
 
         worker.send! WorkMessage.new(wl, wr, message.h)
       }
