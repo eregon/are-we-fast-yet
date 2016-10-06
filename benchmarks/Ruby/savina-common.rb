@@ -99,29 +99,3 @@ class Benchmark
     self.class.verify(result)
   end
 end
-
-##### bench9000 compatibility layer #####
-
-if $:.find { |path| path.end_with?("bench9000/lib") }
-  class Benchmark
-    def self.inherited(subclass)
-      Object.const_set(:BENCH9000_BENCHMARK_CLASS, subclass)
-    end
-  end
-
-  def harness_input
-    BENCH9000_BENCHMARK_CLASS.new
-  end
-
-  def harness_sample(benchmark)
-    benchmark.benchmark
-  end
-
-  def harness_verify(result)
-    BENCH9000_BENCHMARK_CLASS.verify(result)
-  end
-
-  at_exit do
-    require 'bench9000/harness'
-  end
-end
