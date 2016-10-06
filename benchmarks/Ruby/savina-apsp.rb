@@ -22,7 +22,7 @@ NUM_BLOCKS = NUM_BLOCKS_IN_SINGLE_DIM * NUM_BLOCKS_IN_SINGLE_DIM
 
 NeighborMessage = Struct.new(:neighbors)
 InitialMessage = :initial
-ResultMessage = Struct.new(:k, :myBlockId, :initData)
+ResultMessage = Struct.new(:k, :block_id, :init_data)
 
 class Matrix
   def initialize(n)
@@ -41,7 +41,7 @@ class Matrix
 end
 
 module ApspUtils
-  def self.generateGraph
+  def self.generate_graph
     random = MyRandom.new(NUM_WORKERS)
     Matrix.new(NUM_WORKERS) { |i,j|
       if j == i
@@ -52,13 +52,13 @@ module ApspUtils
     }
   end
 
-  GRAPH_DATA = generateGraph
+  GRAPH_DATA = generate_graph
 
-  def self.getBlock(myBlockId)
-    globalStartRow = (myBlockId / NUM_BLOCKS_IN_SINGLE_DIM) * BLOCK_SIZE
-    globalStartCol = (myBlockId % NUM_BLOCKS_IN_SINGLE_DIM) * BLOCK_SIZE
+  def self.get_block(block_id)
+    global_start_row = (block_id / NUM_BLOCKS_IN_SINGLE_DIM) * BLOCK_SIZE
+    global_start_col = (block_id % NUM_BLOCKS_IN_SINGLE_DIM) * BLOCK_SIZE
     Matrix.new(BLOCK_SIZE) { |i,j|
-      GRAPH_DATA[globalStartRow + i, globalStartCol + j]
+      GRAPH_DATA[global_start_row + i, global_start_col + j]
     }
   end
 
@@ -86,38 +86,38 @@ end
 
 class SavinaApsp < Benchmark
   def benchmark
-    blockActors = Array.new(NUM_BLOCKS_IN_SINGLE_DIM) { |i|
+    block_actors = Array.new(NUM_BLOCKS_IN_SINGLE_DIM) { |i|
       Array.new(NUM_BLOCKS_IN_SINGLE_DIM) { |j|
-        myBlockId = i * NUM_BLOCKS_IN_SINGLE_DIM + j
-        FloydWarshallActor.new(myBlockId)
+        block_id = i * NUM_BLOCKS_IN_SINGLE_DIM + j
+        FloydWarshallActor.new(block_id)
       }
     }
 
     # create the links to the neighbors
     NUM_BLOCKS_IN_SINGLE_DIM.times { |i|
       NUM_BLOCKS_IN_SINGLE_DIM.times { |j|
-        current = blockActors[i][j]
-        neighbors = (blockActors.map { |row| row[j] } + blockActors[i])
+        current = block_actors[i][j]
+        neighbors = (block_actors.map { |row| row[j] } + block_actors[i])
         neighbors.delete current
         current.send! NeighborMessage.new(neighbors.freeze)
       }
     }
 
     # start the computation
-    blockActors.each { |row| row.each { |actor| actor.send! InitialMessage } }
+    block_actors.each { |row| row.each { |actor| actor.send! InitialMessage } }
 
     Actor.await_all_actors
 
-    blockActors
+    block_actors
   end
 
-  def self.verify(blockActors)
+  def self.verify(block_actors)
     result = Array.new(NUM_WORKERS) { Array.new(NUM_WORKERS, -1) }
-    blockActors.each { |row|
+    block_actors.each { |row|
       row.each { |actor|
         BLOCK_SIZE.times { |i|
           BLOCK_SIZE.times { |j|
-            result[actor.row_offset+i][actor.col_offset + j] = actor.currentIterData[i,j]
+            result[actor.row_offset+i][actor.col_offset + j] = actor.current_iter_data[i,j]
           }
         }
       }
@@ -135,16 +135,16 @@ end
 class FloydWarshallActor < Actor
   NUM_NEIGHBORS = 2 * (NUM_BLOCKS_IN_SINGLE_DIM - 1)
 
-  attr_reader :currentIterData, :row_offset, :col_offset
+  attr_reader :current_iter_data, :row_offset, :col_offset
 
-  def initialize(myBlockId)
-    @myBlockId = myBlockId
-    @row_offset = (myBlockId / NUM_BLOCKS_IN_SINGLE_DIM) * BLOCK_SIZE
-    @col_offset = (myBlockId % NUM_BLOCKS_IN_SINGLE_DIM) * BLOCK_SIZE
+  def initialize(block_id)
+    @block_id = block_id
+    @row_offset = (block_id / NUM_BLOCKS_IN_SINGLE_DIM) * BLOCK_SIZE
+    @col_offset = (block_id % NUM_BLOCKS_IN_SINGLE_DIM) * BLOCK_SIZE
     @k = -1
-    @neighborDataPerIteration = Array.new(NUM_BLOCKS, nil)
+    @neighbor_data_per_iteration = Array.new(NUM_BLOCKS, nil)
     @received = 0
-    @currentIterData = ApspUtils.getBlock(myBlockId)
+    @current_iter_data = ApspUtils.get_block(block_id)
   end
 
   def process(message)
@@ -152,17 +152,17 @@ class FloydWarshallActor < Actor
     when NeighborMessage
       @neighbors = message.neighbors
     when InitialMessage
-      notifyNeighbors
+      notify_neighbors
     when ResultMessage
       raise unless @neighbors.size == NUM_NEIGHBORS
-      haveAllData = storeIterationData(message.k, message.myBlockId, message.initData)
-      if haveAllData
+      have_all_data = store_iteration_data(message.k, message.block_id, message.init_data)
+      if have_all_data
         # received enough data from neighbors, can proceed to do computation for next k
         @k += 1
 
-        performComputation
-        notifyNeighbors
-        @neighborDataPerIteration.fill(nil)
+        perform_computation
+        notify_neighbors
+        @neighbor_data_per_iteration.fill(nil)
         @received = 0
 
         if @k == NUM_WORKERS - 1
@@ -173,43 +173,43 @@ class FloydWarshallActor < Actor
     end
   end
 
-  def storeIterationData(iteration, sourceId, dataArray)
+  def store_iteration_data(iteration, source_id, data_array)
     #raise [iteration,@k].inspect unless iteration == @k or iteration == -1
-    @received += 1 unless @neighborDataPerIteration[sourceId]
-    @neighborDataPerIteration[sourceId] = dataArray
+    @received += 1 unless @neighbor_data_per_iteration[source_id]
+    @neighbor_data_per_iteration[source_id] = data_array
     @received == NUM_NEIGHBORS
   end
 
-  def performComputation
-    prevIterData = @currentIterData
+  def perform_computation
+    prev_iter_data = @current_iter_data
     # make modifications on a fresh local data array for this iteration
-    @currentIterData = Matrix.new(BLOCK_SIZE) { |i,j|
+    @current_iter_data = Matrix.new(BLOCK_SIZE) { |i,j|
       gi = @row_offset + i
       gj = @col_offset + j
-      newIterData = elementAt(gi, @k, prevIterData) + elementAt(@k, gj, prevIterData)
-      [prevIterData[i,j], newIterData].min
+      new_iter_data = element_at(gi, @k, prev_iter_data) + element_at(@k, gj, prev_iter_data)
+      [prev_iter_data[i,j], new_iter_data].min
     }
   end
 
-  def elementAt(row, col, prevIterData)
-    destBlockId = (row / BLOCK_SIZE) * NUM_BLOCKS_IN_SINGLE_DIM + col / BLOCK_SIZE
-    localRow = row % BLOCK_SIZE
-    localCol = col % BLOCK_SIZE
+  def element_at(row, col, prev_iter_data)
+    dest_block_id = (row / BLOCK_SIZE) * NUM_BLOCKS_IN_SINGLE_DIM + col / BLOCK_SIZE
+    local_row = row % BLOCK_SIZE
+    local_col = col % BLOCK_SIZE
 
-    # puts "Accessing block-#{destBlockId} from block-#{@myBlockId} for (#{row}, #{col})"
+    # puts "Accessing block-#{dest_block_id} from block-#{@block_id} for (#{row}, #{col})"
 
-    if destBlockId == @myBlockId
-      prevIterData[localRow,localCol]
+    if dest_block_id == @block_id
+      prev_iter_data[local_row,local_col]
     else
-      @neighborDataPerIteration[destBlockId][localRow,localCol]
+      @neighbor_data_per_iteration[dest_block_id][local_row, local_col]
     end
   end
 
-  def notifyNeighbors
+  def notify_neighbors
     # send the current result to all other blocks who might need it
     # note: this is inefficient version where data is sent to neighbors
     # who might not need it for the current value of k
-    resultMessage = ResultMessage.new(@k, @myBlockId, @currentIterData)
-    @neighbors.each { |neighbor| neighbor.send!(resultMessage) }
+    result_message = ResultMessage.new(@k, @block_id, @current_iter_data)
+    @neighbors.each { |neighbor| neighbor.send!(result_message) }
   end
 end
