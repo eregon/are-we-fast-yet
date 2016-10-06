@@ -84,7 +84,7 @@ module ApspUtils
   SOLUTION = solve(GRAPH_DATA)
 end
 
-class SavinaApsp < Benchmark
+class SavinaApsp < SavinaBenchmark
   def benchmark
     block_actors = Array.new(NUM_BLOCKS_IN_SINGLE_DIM) { |i|
       Array.new(NUM_BLOCKS_IN_SINGLE_DIM) { |j|

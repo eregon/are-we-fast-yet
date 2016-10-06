@@ -29,9 +29,14 @@ class Benchmark
     raise 'subclass_responsibility'
   end
 
-  # noinspection RubyUnusedLocalVariable
   def verify_result(_result)
     raise 'subclass_responsibility'
+  end
+end
+
+class SavinaBenchmark < Benchmark
+  def verify_result(result)
+    self.class.verify(result)
   end
 end
 

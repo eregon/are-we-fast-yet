@@ -92,10 +92,3 @@ ARGV.each_with_index { |arg, i|
   end
   ARGS[i] = n
 }
-
-##### are-we-fast-yet compatibility layer #####
-class Benchmark
-  def verify_result(result)
-    self.class.verify(result)
-  end
-end

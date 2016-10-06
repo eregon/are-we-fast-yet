@@ -15,7 +15,7 @@ require_relative 'savina-common'
 
 NUM_VALUES, MAX_VALUE, SEED = ARGS
 
-class SavinaRadixSort < Benchmark
+class SavinaRadixSort < SavinaBenchmark
   def benchmark
     validation_actor = ValidationActor.new
     source_actor = IntSourceActor.new

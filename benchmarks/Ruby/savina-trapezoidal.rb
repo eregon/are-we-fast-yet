@@ -27,7 +27,7 @@ NUM_WORKERS = W
 raise unless L.is_a?(Float) and R.is_a?(Float)
 PRECISION = (R - L) / N
 
-class SavinaTrapezoidal < Benchmark
+class SavinaTrapezoidal < SavinaBenchmark
   def benchmark
     master = MasterActor.new
     master.send! WorkMessage.new(L, R, PRECISION)
