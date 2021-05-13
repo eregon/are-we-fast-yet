@@ -48,7 +48,7 @@ class Run:
             raise Exception("Benchmark failed with incorrect result")
 
         end_time = perf_counter_ns()
-        run_time = (end_time - start_time) / 1000
+        run_time = (end_time - start_time) // 1000
 
         self._print_result(run_time)
 
@@ -62,19 +62,19 @@ class Run:
         print(
             self._name
             + ": iterations="
-            + self._num_iterations
+            + str(self._num_iterations)
             + " average: "
-            + (self._total / self._num_iterations)
+            + str(round(self._total / self._num_iterations))
             + "us total: "
-            + self._total
+            + str(self._total)
             + "us\n"
         )
 
     def _print_result(self, run_time):
-        print(self._name + ": iterations=1 runtime: " + run_time + "us")
+        print(self._name + ": iterations=1 runtime: " + str(run_time) + "us")
 
     def print_total(self):
-        print("Total Runtime: " + self._total + "us")
+        print("Total Runtime: " + str(self._total) + "us")
 
     def set_num_iterations(self, num_iterations):
         self._num_iterations = num_iterations

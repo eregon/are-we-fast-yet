@@ -27,9 +27,9 @@ from run import Run
 def process_arguments(args):
     new_run = Run(args[1])
 
-    if len(args) > 1:
+    if len(args) > 2:
         new_run.set_num_iterations(int(args[2]))
-        if len(args) > 2:
+        if len(args) > 3:
             new_run.set_inner_iterations(int(args[3]))
 
     return new_run
